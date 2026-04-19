@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order #{{ order.id }}</title>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <h1>Order #{{ order.id }}</h1>
+    <ul>
+        {% for item in order.items.all %}
+            <li>{{ item.name }} - {{ item.price }} {{ item.currency }}</li>
+        {% endfor %}
+    </ul>
+    {% if order.discount %}
+        <p>Discount: {{ order.discount.percent_off }}%</p>
+    {% endif %}
+    {% if order.tax %}
+        <p>Tax: {{ order.tax.percent }}%</p>
+    {% endif %}
+    <p><strong>Total: {{ total }} {{ order.get_currency }}</strong></p>
+    <button id="buy-button">Buy Order</button>
+
+    <script>
+        const stripe = Stripe('{{ stripe_publishable_key }}');
+        document.getElementById('buy-button').addEventListener('click', async () => {
+            const response = await fetch(`/buy-order/{{ order.id }}/`);
+            const data = await response.json();
+            if (data.session_id) {
+                await stripe.redirectToCheckout({ sessionId: data.session_id });
+            } else {
+                alert('Failed to create checkout session');
+            }
+        });
+    </script>
+</body>
+</html>
